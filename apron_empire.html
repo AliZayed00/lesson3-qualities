@@ -1,0 +1,2090 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apron Empire: The Outliers Quest</title>
+<style>
+  :root {
+    --sepia1: #8B4513;
+    --sepia2: #D2691E;
+    --sepia3: #F4A460;
+    --cream: #FFF8DC;
+    --cream2: #F5E6C8;
+    --deep-red: #8B0000;
+    --gold: #FFD700;
+    --gold2: #FFA500;
+    --text-dark: #2C1A0E;
+    --text-mid: #5C3317;
+    --green: #228B22;
+    --lightgreen: #90EE90;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Georgia', serif;
+    background: #1a0a00;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  #game-container {
+    width: 820px;
+    max-width: 100vw;
+    background: var(--cream);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 60px rgba(0,0,0,0.8);
+  }
+
+  /* ========== SHAKE ANIMATION ========== */
+  @keyframes shake {
+    0%,100%{transform:translateX(0)}
+    10%{transform:translateX(-8px)}
+    20%{transform:translateX(8px)}
+    30%{transform:translateX(-6px)}
+    40%{transform:translateX(6px)}
+    50%{transform:translateX(-4px)}
+    60%{transform:translateX(4px)}
+    70%{transform:translateX(-2px)}
+    80%{transform:translateX(2px)}
+  }
+  .shake { animation: shake 0.5s ease; }
+
+  /* ========== FLOATING TEXT ========== */
+  .float-text {
+    position: fixed;
+    font-size: 22px;
+    font-weight: bold;
+    color: var(--gold);
+    text-shadow: 1px 1px 3px #000;
+    pointer-events: none;
+    animation: floatUp 1.2s ease-out forwards;
+    z-index: 9999;
+  }
+  @keyframes floatUp {
+    0%{opacity:1;transform:translateY(0) scale(1)}
+    60%{opacity:1;transform:translateY(-60px) scale(1.2)}
+    100%{opacity:0;transform:translateY(-100px) scale(0.8)}
+  }
+
+  /* ========== PARTICLES ========== */
+  .particle {
+    position: fixed;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+  }
+
+  /* ========== PHASE 1 STYLES ========== */
+  #phase1 {
+    min-height: 100vh;
+    background: linear-gradient(180deg, #3a1a00 0%, #5c2d00 40%, #3a1a00 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #phase1 h1 {
+    color: var(--gold);
+    text-align: center;
+    padding: 15px 10px 5px;
+    font-size: 22px;
+    text-shadow: 2px 2px 6px #000;
+    letter-spacing: 2px;
+  }
+  #phase1 .subtitle {
+    color: var(--sepia3);
+    font-size: 12px;
+    text-align: center;
+    margin-bottom: 6px;
+    font-style: italic;
+  }
+
+  /* Conveyor Belt */
+  #conveyor-wrap {
+    width: 100%;
+    height: 90px;
+    background: #444;
+    border-top: 6px solid #666;
+    border-bottom: 6px solid #222;
+    overflow: hidden;
+    position: relative;
+    margin-bottom: 10px;
+  }
+  #conveyor-belt {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    animation: conveyorMove 4s linear infinite;
+    white-space: nowrap;
+    font-size: 32px;
+    gap: 30px;
+    padding: 0 10px;
+  }
+  @keyframes conveyorMove {
+    0%{transform:translateX(0)}
+    100%{transform:translateX(-200px)}
+  }
+  .conveyor-roller {
+    position: absolute;
+    bottom: 0;
+    width: 30px;
+    height: 14px;
+    background: #888;
+    border-radius: 50%;
+    border: 2px solid #555;
+  }
+
+  /* Supervisor */
+  #supervisor-wrap {
+    width: 100%;
+    height: 70px;
+    position: relative;
+    margin-bottom: 6px;
+  }
+  #supervisor {
+    position: absolute;
+    font-size: 44px;
+    bottom: 0;
+    animation: supervisorPace 4s ease-in-out infinite;
+  }
+  @keyframes supervisorPace {
+    0%,100%{left:10%;transform:scaleX(1)}
+    49%{left:75%;transform:scaleX(1)}
+    50%{left:75%;transform:scaleX(-1)}
+    99%{left:10%;transform:scaleX(-1)}
+  }
+  #supervisor-speech {
+    position: absolute;
+    top: 0;
+    background: white;
+    border: 2px solid #333;
+    border-radius: 10px;
+    padding: 4px 10px;
+    font-size: 12px;
+    color: #333;
+    opacity: 0;
+    transition: opacity 0.3s;
+    white-space: nowrap;
+    z-index: 10;
+    pointer-events: none;
+  }
+  #supervisor-speech.show { opacity: 1; }
+
+  /* Phase1 center area */
+  #phase1-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    padding: 0 20px 20px;
+    width: 100%;
+  }
+
+  .wage-display {
+    background: #1a1a1a;
+    color: #00FF00;
+    font-family: 'Courier New', monospace;
+    font-size: 16px;
+    padding: 8px 20px;
+    border: 2px solid #00AA00;
+    border-radius: 4px;
+    text-align: center;
+    box-shadow: 0 0 12px rgba(0,255,0,0.3);
+  }
+
+  #phase1-progress-wrap {
+    width: 90%;
+    background: #333;
+    border: 2px solid #666;
+    border-radius: 20px;
+    height: 26px;
+    overflow: hidden;
+    position: relative;
+  }
+  #phase1-progress {
+    height: 100%;
+    background: linear-gradient(90deg, var(--deep-red), #FF4444);
+    border-radius: 20px;
+    transition: width 0.5s linear;
+  }
+  #phase1-timer-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-50%);
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px #000;
+  }
+
+  #sew-btn-p1 {
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #FF6666, var(--deep-red));
+    border: 5px solid #FFD700;
+    color: white;
+    font-size: 26px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.5), inset 0 2px 8px rgba(255,255,255,0.2);
+    transition: transform 0.08s, box-shadow 0.08s;
+    letter-spacing: 2px;
+    animation: btnBob 2s ease-in-out infinite;
+    -webkit-tap-highlight-color: transparent;
+  }
+  @keyframes btnBob {
+    0%,100%{transform:scale(1) translateY(0)}
+    50%{transform:scale(1.04) translateY(-4px)}
+  }
+  #sew-btn-p1:active { transform:scale(0.92)!important; box-shadow: 0 2px 8px rgba(0,0,0,0.5)!important; }
+
+  #phase1-clicks {
+    color: var(--sepia3);
+    font-size: 14px;
+    font-style: italic;
+  }
+
+  /* Warning popup */
+  #warning-popup {
+    position: absolute;
+    top: 30%;
+    left: 50%;
+    transform: translateX(-50%) scale(0);
+    background: #FF4444;
+    color: white;
+    border: 3px solid #FFD700;
+    border-radius: 12px;
+    padding: 16px 30px;
+    font-size: 18px;
+    font-weight: bold;
+    z-index: 100;
+    text-align: center;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  #warning-popup.show { transform: translateX(-50%) scale(1); }
+
+  /* Transition banner */
+  #transition-banner {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.9);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s;
+  }
+  #transition-banner.show { opacity: 1; pointer-events: all; }
+  #transition-banner h2 {
+    color: var(--gold);
+    font-size: 26px;
+    text-align: center;
+    padding: 0 30px;
+    line-height: 1.5;
+    margin-bottom: 20px;
+    text-shadow: 0 0 20px var(--gold2);
+    animation: textGlow 2s ease-in-out infinite alternate;
+  }
+  @keyframes textGlow {
+    0%{text-shadow:0 0 10px var(--gold2)}
+    100%{text-shadow:0 0 30px var(--gold), 0 0 60px var(--gold2)}
+  }
+  #transition-banner p {
+    color: var(--cream);
+    font-size: 15px;
+    text-align: center;
+    padding: 0 40px;
+    margin-bottom: 10px;
+    font-style: italic;
+  }
+  #start-phase2-btn {
+    margin-top: 20px;
+    padding: 14px 40px;
+    background: linear-gradient(135deg, var(--gold), var(--gold2));
+    border: none;
+    border-radius: 30px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #1a0a00;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(255,215,0,0.5);
+    animation: btnBob 1.5s ease-in-out infinite;
+  }
+  .principle-badge {
+    display: inline-block;
+    background: var(--deep-red);
+    color: white;
+    border-radius: 20px;
+    padding: 4px 14px;
+    margin: 4px;
+    font-size: 13px;
+    font-weight: bold;
+  }
+
+  /* ========== PHASE 2 ========== */
+  #phase2 {
+    display: none;
+    flex-direction: column;
+    min-height: 100vh;
+    background: var(--cream2);
+  }
+
+  /* HUD */
+  #hud {
+    background: linear-gradient(135deg, var(--sepia1), #5c2d00);
+    color: white;
+    padding: 10px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    border-bottom: 4px solid var(--gold);
+  }
+  .hud-block {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,215,0,0.3);
+    border-radius: 8px;
+    padding: 5px 12px;
+    font-size: 13px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 90px;
+  }
+  .hud-label {
+    font-size: 10px;
+    color: var(--sepia3);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 2px;
+  }
+  .hud-value {
+    font-weight: bold;
+    font-size: 16px;
+    color: var(--gold);
+  }
+  #cash-display { font-size: 20px; }
+  #sat-bar-wrap {
+    width: 100px;
+    height: 10px;
+    background: #333;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-top: 2px;
+  }
+  #sat-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #00cc44, #00ff88);
+    border-radius: 5px;
+    transition: width 0.5s;
+  }
+  .trend-badge {
+    background: linear-gradient(135deg, #FF6B00, #FF3300);
+    color: white;
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 13px;
+    font-weight: bold;
+    animation: trendPulse 1.5s ease-in-out infinite;
+    white-space: nowrap;
+  }
+  @keyframes trendPulse {
+    0%,100%{transform:scale(1)}
+    50%{transform:scale(1.06)}
+  }
+
+  /* Win bar */
+  #win-bar-wrap {
+    width: 100%;
+    background: #333;
+    height: 10px;
+    position: relative;
+    border-radius: 0;
+  }
+  #win-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold), #FFAA00);
+    transition: width 0.6s ease;
+  }
+  #win-bar-label {
+    position: absolute;
+    right: 4px;
+    top: -1px;
+    font-size: 9px;
+    color: #fff;
+    text-shadow: 1px 1px 2px #000;
+  }
+
+  /* Principle Tabs */
+  #tabs {
+    display: flex;
+    background: var(--sepia1);
+    border-bottom: 3px solid var(--gold);
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 10px 5px;
+    background: transparent;
+    border: none;
+    color: var(--sepia3);
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: background 0.2s, color 0.2s;
+    border-right: 1px solid rgba(255,215,0,0.2);
+    font-family: 'Georgia', serif;
+  }
+  .tab-btn:last-child { border-right: none; }
+  .tab-btn:hover { background: rgba(255,215,0,0.1); color: var(--cream); }
+  .tab-btn.active {
+    background: var(--cream2);
+    color: var(--sepia1);
+    border-bottom: 3px solid var(--cream2);
+    margin-bottom: -3px;
+  }
+
+  .tab-panel { display: none; padding: 14px; }
+  .tab-panel.active { display: block; }
+
+  /* Autonomy */
+  .product-cards {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .product-card {
+    flex: 1;
+    min-width: 150px;
+    border: 3px solid var(--sepia2);
+    border-radius: 12px;
+    padding: 12px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    position: relative;
+  }
+  .product-card:hover { transform: translateY(-3px); box-shadow: 0 6px 16px rgba(0,0,0,0.15); }
+  .product-card.selected {
+    border-color: var(--gold);
+    background: #FFFBF0;
+    box-shadow: 0 0 0 3px rgba(255,215,0,0.4), 0 6px 16px rgba(0,0,0,0.15);
+  }
+  .product-icon { font-size: 36px; margin-bottom: 6px; }
+  .product-name { font-weight: bold; color: var(--sepia1); font-size: 16px; }
+  .product-price { color: var(--green); font-size: 14px; }
+  .product-clicks { color: #888; font-size: 12px; }
+
+  .slider-group {
+    background: white;
+    border: 2px solid var(--sepia3);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+  }
+  .slider-group label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    color: var(--text-mid);
+    margin-bottom: 6px;
+    font-weight: bold;
+  }
+  .slider-group label span { color: var(--sepia2); font-weight: normal; }
+  input[type=range] {
+    width: 100%;
+    accent-color: var(--sepia1);
+    cursor: pointer;
+  }
+  .slider-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: #888;
+    margin-top: 2px;
+  }
+
+  /* Sew button */
+  #sew-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 14px;
+    background: linear-gradient(180deg, #f9f0e0, var(--cream2));
+    border-top: 2px solid var(--sepia3);
+    border-bottom: 2px solid var(--sepia3);
+  }
+  #sew-btn-p2 {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #E8472A, var(--deep-red));
+    border: 5px solid var(--gold);
+    color: white;
+    font-size: 22px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.4), inset 0 2px 8px rgba(255,255,255,0.2);
+    transition: transform 0.08s, box-shadow 0.08s;
+    animation: btnBob 2.5s ease-in-out infinite;
+    -webkit-tap-highlight-color: transparent;
+    letter-spacing: 1px;
+  }
+  #sew-btn-p2:active { transform:scale(0.9)!important; box-shadow:0 2px 8px rgba(0,0,0,0.5)!important; }
+
+  #craft-progress-wrap {
+    width: 80%;
+    max-width: 340px;
+    background: #ddd;
+    border: 2px solid var(--sepia3);
+    border-radius: 20px;
+    height: 24px;
+    overflow: hidden;
+    position: relative;
+  }
+  #craft-progress {
+    height: 100%;
+    background: linear-gradient(90deg, var(--sepia1), var(--sepia2), var(--gold));
+    border-radius: 20px;
+    transition: width 0.2s ease;
+  }
+  #craft-progress-text {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    font-size: 11px;
+    font-weight: bold;
+    color: white;
+    text-shadow: 1px 1px 2px #000;
+  }
+  #craft-status {
+    font-size: 13px;
+    color: var(--text-mid);
+    font-style: italic;
+  }
+
+  /* Complexity */
+  #complexity-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .minigame-card {
+    background: white;
+    border: 2px solid var(--sepia2);
+    border-radius: 12px;
+    padding: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .minigame-card h3 {
+    color: var(--sepia1);
+    font-size: 15px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .mg-badge {
+    font-size: 11px;
+    background: var(--sepia3);
+    color: white;
+    border-radius: 10px;
+    padding: 2px 8px;
+  }
+
+  /* Color match */
+  #color-swatches {
+    display: flex;
+    gap: 10px;
+    margin: 10px 0;
+    justify-content: center;
+  }
+  .color-swatch {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 4px solid transparent;
+    transition: transform 0.15s, border-color 0.15s;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+  }
+  .color-swatch:hover { transform: scale(1.12); }
+  .color-swatch.correct { border-color: #00FF00; animation: popIn 0.3s; }
+  .color-swatch.wrong { border-color: #FF0000; animation: shake 0.3s; }
+  @keyframes popIn {
+    0%{transform:scale(1)}50%{transform:scale(1.3)}100%{transform:scale(1)}
+  }
+
+  #color-target {
+    text-align: center;
+    font-size: 14px;
+    color: var(--text-mid);
+    margin-bottom: 6px;
+  }
+  #color-target-swatch {
+    display: inline-block;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 3px solid #333;
+    vertical-align: middle;
+    margin-left: 8px;
+    animation: targetPulse 0.8s ease-in-out infinite;
+  }
+  @keyframes targetPulse {
+    0%,100%{transform:scale(1)}
+    50%{transform:scale(1.2)}
+  }
+  #color-timer-bar-wrap {
+    width: 100%;
+    background: #eee;
+    border-radius: 5px;
+    height: 8px;
+    overflow: hidden;
+    margin-top: 6px;
+  }
+  #color-timer-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #FF4444, var(--gold));
+    border-radius: 5px;
+    transition: width 0.1s linear;
+  }
+  #color-result {
+    text-align: center;
+    font-size: 13px;
+    font-weight: bold;
+    height: 20px;
+    margin-top: 4px;
+  }
+
+  /* Negotiation bar */
+  #neg-bar-wrap {
+    width: 100%;
+    height: 40px;
+    background: linear-gradient(90deg, #FF4444 0%, #FFAA00 40%, #44BB44 60%, #44BB44 80%, #FFAA00 100%);
+    border-radius: 10px;
+    position: relative;
+    overflow: hidden;
+    border: 2px solid #333;
+    margin: 10px 0;
+    cursor: pointer;
+  }
+  #neg-needle {
+    position: absolute;
+    top: 0;
+    width: 4px;
+    height: 100%;
+    background: white;
+    border-radius: 2px;
+    box-shadow: 0 0 8px rgba(0,0,0,0.8);
+    transform: translateX(-50%);
+    transition: left 0.05s;
+  }
+  #neg-sweet-spot {
+    position: absolute;
+    top: 0;
+    left: 60%;
+    width: 20%;
+    height: 100%;
+    background: rgba(255,255,255,0.25);
+    border-left: 2px dashed rgba(255,255,255,0.8);
+    border-right: 2px dashed rgba(255,255,255,0.8);
+  }
+  #deal-btn {
+    display: block;
+    margin: 0 auto;
+    padding: 10px 30px;
+    background: linear-gradient(135deg, #228B22, #00AA44);
+    color: white;
+    border: none;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,100,0,0.4);
+    transition: transform 0.1s;
+    font-family: 'Georgia', serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #deal-btn:active { transform: scale(0.93); }
+  #neg-result {
+    text-align: center;
+    font-size: 14px;
+    font-weight: bold;
+    height: 22px;
+    margin-top: 6px;
+  }
+  #neg-hint {
+    text-align: center;
+    font-size: 11px;
+    color: #888;
+    margin-top: 4px;
+  }
+
+  /* Effort-Reward */
+  #effort-panel { display: flex; flex-direction: column; gap: 12px; }
+
+  .upgrade-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .upgrade-card {
+    background: white;
+    border: 2px solid var(--sepia2);
+    border-radius: 10px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .upgrade-info { flex: 1; }
+  .upgrade-name { font-weight: bold; color: var(--sepia1); font-size: 14px; }
+  .upgrade-desc { font-size: 11px; color: #888; margin-top: 2px; }
+  .upgrade-btn {
+    padding: 7px 16px;
+    background: linear-gradient(135deg, var(--sepia1), var(--sepia2));
+    color: white;
+    border: none;
+    border-radius: 20px;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: transform 0.1s, opacity 0.2s;
+    font-family: 'Georgia', serif;
+  }
+  .upgrade-btn:active { transform: scale(0.93); }
+  .upgrade-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+  .upgrade-btn.owned {
+    background: linear-gradient(135deg, #228B22, #00AA44);
+  }
+
+  .stats-panel {
+    background: white;
+    border: 2px solid var(--sepia2);
+    border-radius: 10px;
+    padding: 12px;
+  }
+  .stats-panel h3 { color: var(--sepia1); font-size: 14px; margin-bottom: 8px; }
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    padding: 3px 0;
+    border-bottom: 1px solid #f0e0d0;
+    color: var(--text-mid);
+  }
+  .stat-row:last-child { border-bottom: none; }
+  .stat-value { font-weight: bold; color: var(--sepia1); }
+
+  /* Day/Night tint */
+  #day-night-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    z-index: 5;
+    transition: background 10s;
+  }
+
+  /* ========== WIN SCREEN ========== */
+  #win-screen {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(135deg, #1a0a00, #3a1a00);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    overflow-y: auto;
+    z-index: 5000;
+    padding: 30px 20px;
+  }
+  #win-screen.show { display: flex; }
+  #win-screen h1 {
+    color: var(--gold);
+    font-size: 32px;
+    text-align: center;
+    margin-bottom: 6px;
+    text-shadow: 0 0 30px var(--gold2);
+    animation: textGlow 2s ease-in-out infinite alternate;
+  }
+  #win-screen .win-emoji { font-size: 64px; margin: 10px 0; }
+  #win-screen .win-sub {
+    color: var(--cream);
+    font-size: 16px;
+    text-align: center;
+    font-style: italic;
+    margin-bottom: 20px;
+    padding: 0 20px;
+  }
+  .win-stats {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,215,0,0.3);
+    border-radius: 12px;
+    padding: 16px 24px;
+    margin-bottom: 16px;
+    width: 100%;
+    max-width: 500px;
+  }
+  .win-stats h3 { color: var(--gold); font-size: 16px; margin-bottom: 10px; }
+  .win-stat-row {
+    display: flex;
+    justify-content: space-between;
+    color: var(--cream);
+    font-size: 14px;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .win-stat-row:last-child { border-bottom: none; }
+  .win-principle {
+    background: rgba(255,255,255,0.06);
+    border-left: 4px solid var(--gold);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    width: 100%;
+    max-width: 500px;
+  }
+  .win-principle h4 { color: var(--gold); font-size: 14px; margin-bottom: 4px; }
+  .win-principle p { color: var(--cream); font-size: 13px; line-height: 1.5; }
+  .win-law {
+    background: linear-gradient(135deg, var(--deep-red), #AA0000);
+    color: white;
+    border-radius: 12px;
+    padding: 16px 20px;
+    text-align: center;
+    font-size: 15px;
+    line-height: 1.6;
+    margin-bottom: 16px;
+    width: 100%;
+    max-width: 500px;
+    font-style: italic;
+  }
+  #play-again-btn {
+    padding: 14px 50px;
+    background: linear-gradient(135deg, var(--gold), var(--gold2));
+    border: none;
+    border-radius: 30px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #1a0a00;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(255,215,0,0.4);
+    font-family: 'Georgia', serif;
+    animation: btnBob 2s ease-in-out infinite;
+    margin-top: 10px;
+  }
+
+  /* Minigame overlay for negotiation */
+  #neg-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.7);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+  }
+  #neg-overlay.show { display: flex; }
+  #neg-modal {
+    background: var(--cream);
+    border: 4px solid var(--gold);
+    border-radius: 16px;
+    padding: 24px;
+    width: 90%;
+    max-width: 420px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    animation: modalIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes modalIn {
+    from{transform:scale(0.5);opacity:0}
+    to{transform:scale(1);opacity:1}
+  }
+  #neg-modal h3 { color: var(--sepia1); font-size: 18px; margin-bottom: 6px; text-align: center; }
+  #neg-modal p { color: var(--text-mid); font-size: 13px; text-align: center; margin-bottom: 12px; }
+  #neg-item-info { text-align: center; font-size: 15px; color: var(--sepia1); font-weight: bold; margin-bottom: 12px; }
+
+  /* Scroll for mobile */
+  @media (max-width: 600px) {
+    #game-container { width: 100vw; }
+    .product-cards { flex-direction: column; }
+    #hud { gap: 5px; }
+    .hud-block { min-width: 70px; padding: 4px 8px; }
+  }
+
+  /* Info tooltip */
+  .info-tip {
+    font-size: 11px;
+    background: #f0e8d8;
+    border: 1px solid var(--sepia3);
+    border-radius: 8px;
+    padding: 6px 10px;
+    color: var(--text-mid);
+    font-style: italic;
+    text-align: center;
+  }
+
+  /* Bonus flash */
+  @keyframes bonusFlash {
+    0%,100%{background:transparent}
+    50%{background:rgba(255,215,0,0.3)}
+  }
+  .bonus-flash { animation: bonusFlash 0.6s ease; }
+
+  /* Working late badge */
+  #late-badge {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #003366, #0055AA);
+    color: white;
+    border-radius: 20px;
+    padding: 8px 18px;
+    font-size: 14px;
+    font-weight: bold;
+    z-index: 500;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.4s, transform 0.4s;
+  }
+  #late-badge.show { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<div id="game-container">
+
+  <!-- ===== PHASE 1 ===== -->
+  <div id="phase1">
+    <h1>⚙️ Lower East Side Sweatshop — 1903 ⚙️</h1>
+    <p class="subtitle">Malcolm Gladwell's Outliers · Chapter 5: The Three Principles of Meaningful Work</p>
+
+    <!-- Conveyor Belt -->
+    <div id="conveyor-wrap">
+      <div id="conveyor-belt">
+        👕&nbsp;&nbsp;👗&nbsp;&nbsp;🧥&nbsp;&nbsp;👔&nbsp;&nbsp;👗&nbsp;&nbsp;👕&nbsp;&nbsp;🧥&nbsp;&nbsp;👔&nbsp;&nbsp;👗&nbsp;&nbsp;👕&nbsp;&nbsp;🧥&nbsp;&nbsp;👔&nbsp;&nbsp;👗&nbsp;&nbsp;👕&nbsp;&nbsp;🧥&nbsp;&nbsp;👔&nbsp;&nbsp;👗&nbsp;&nbsp;👕&nbsp;&nbsp;🧥&nbsp;&nbsp;👔
+      </div>
+    </div>
+
+    <!-- Supervisor -->
+    <div id="supervisor-wrap">
+      <div id="supervisor">👨‍💼</div>
+      <div id="supervisor-speech">WORK FASTER! 😤</div>
+    </div>
+
+    <!-- Center area -->
+    <div id="phase1-center">
+      <div class="wage-display">
+        FACTORY WAGE: $1.00 / 10 seconds (fixed)
+      </div>
+
+      <div id="phase1-progress-wrap">
+        <div id="phase1-progress" style="width:100%"></div>
+        <div id="phase1-timer-text">20s remaining</div>
+      </div>
+
+      <button id="sew-btn-p1" onclick="p1Click()">SEW!</button>
+
+      <div id="phase1-clicks">Clicks: 0</div>
+    </div>
+
+    <div id="warning-popup">⚠️ WORK HARDER! ⚠;<br><small>The boss is watching you!</small></div>
+  </div>
+
+  <!-- ===== TRANSITION BANNER ===== -->
+  <div id="transition-banner">
+    <h2>🏭 This Work Lacks All Three Principles of Meaningful Work!</h2>
+    <div style="display:flex;flex-wrap:wrap;justify-content:center;margin:10px 0;">
+      <span class="principle-badge">❌ No Autonomy</span>
+      <span class="principle-badge">❌ No Complexity</span>
+      <span class="principle-badge">❌ No Effort↔Reward Link</span>
+    </div>
+    <p>"Hard work is only a prison sentence<br>when you lack autonomy, complexity, and<br>a connection between effort and reward."</p>
+    <p style="margin-top:8px;">— Malcolm Gladwell, <em>Outliers</em>, Chapter 5</p>
+    <p style="margin-top:12px;font-size:14px;color:#FFD700;">Time to follow <strong>Louis & Regina Borgenicht</strong><br>and start your OWN garment business!</p>
+    <button id="start-phase2-btn" onclick="startPhase2()">🚀 Start the Borgenicht Workshop!</button>
+  </div>
+
+  <!-- ===== PHASE 2 ===== -->
+  <div id="phase2">
+
+    <!-- HUD -->
+    <div id="hud">
+      <div class="hud-block">
+        <span class="hud-label">💰 Cash</span>
+        <span class="hud-value" id="cash-display">$0</span>
+      </div>
+      <div class="hud-block">
+        <span class="hud-label">😊 Satisfaction</span>
+        <div id="sat-bar-wrap"><div id="sat-bar" style="width:50%"></div></div>
+        <span style="font-size:11px;color:var(--sepia3)" id="sat-value">50</span>
+      </div>
+      <div class="hud-block">
+        <span class="hud-label">📅 Day</span>
+        <span class="hud-value" id="day-display">1</span>
+        <span style="font-size:10px;color:var(--sepia3)" id="time-display">Morning</span>
+      </div>
+      <div class="hud-block" style="flex:2">
+        <span class="hud-label">📈 Trend</span>
+        <span class="trend-badge" id="trend-display">Aprons HOT 🔥</span>
+      </div>
+      <div class="hud-block">
+        <span class="hud-label">🎯 Goal $1000</span>
+        <div id="win-bar-wrap" style="width:90px">
+          <div id="win-bar" style="width:0%"></div>
+          <span id="win-bar-label">0%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Principle Tabs -->
+    <div id="tabs">
+      <button class="tab-btn active" onclick="switchTab('autonomy')">🎛️ Autonomy</button>
+      <button class="tab-btn" onclick="switchTab('complexity')">🧩 Complexity</button>
+      <button class="tab-btn" onclick="switchTab('effort')">⚡ Effort↔Reward</button>
+    </div>
+
+    <!-- AUTONOMY TAB -->
+    <div id="tab-autonomy" class="tab-panel active">
+      <div class="info-tip">🎛️ <strong>AUTONOMY:</strong> You choose what to make, how long to work, and what to charge. Unlike the sweatshop, <em>you are the boss!</em></div>
+      <br>
+      <div class="product-cards">
+        <div class="product-card selected" id="card-apron" onclick="selectProduct('apron')">
+          <div class="product-icon">🧺</div>
+          <div class="product-name">Apron</div>
+          <div class="product-price">Base: $8</div>
+          <div class="product-clicks">5 clicks</div>
+        </div>
+        <div class="product-card" id="card-dress" onclick="selectProduct('dress')">
+          <div class="product-icon">👗</div>
+          <div class="product-name">Dress</div>
+          <div class="product-price">Base: $15</div>
+          <div class="product-clicks">10 clicks</div>
+        </div>
+        <div class="product-card" id="card-suit" onclick="selectProduct('suit')">
+          <div class="product-icon">🧥</div>
+          <div class="product-name">Suit</div>
+          <div class="product-price">Base: $25</div>
+          <div class="product-clicks">15 clicks</div>
+        </div>
+      </div>
+
+      <div class="slider-group">
+        <label>Fabric Quality <span id="quality-label">Medium</span></label>
+        <input type="range" id="quality-slider" min="0" max="2" value="1" oninput="updateSliders()">
+        <div class="slider-labels"><span>Low (+0)</span><span>Med (+20%)</span><span>High (+50%)</span></div>
+      </div>
+      <div class="slider-group">
+        <label>Shop Hours <span id="hours-label">12 hrs</span></label>
+        <input type="range" id="hours-slider" min="0" max="2" value="1" oninput="updateSliders()">
+        <div class="slider-labels"><span>8 hrs</span><span>12 hrs</span><span>16 hrs</span></div>
+      </div>
+      <div class="slider-group">
+        <label>Price Point <span id="price-label">100%</span></label>
+        <input type="range" id="price-slider" min="0" max="2" value="1" oninput="updateSliders()">
+        <div class="slider-labels"><span>50% (Cheap)</span><span>100% (Fair)</span><span>150% (Premium)</span></div>
+      </div>
+      <div class="info-tip" id="market-tip">💡 Fair quality + fair price = consistent sales!</div>
+    </div>
+
+    <!-- COMPLEXITY TAB -->
+    <div id="tab-complexity" class="tab-panel">
+      <div class="info-tip">🧩 <strong>COMPLEXITY:</strong> Running your own business requires skill and judgment — not just repetition. Master these mini-games for bonuses!</div>
+      <br>
+      <div id="complexity-panel">
+
+        <!-- Color Match -->
+        <div class="minigame-card">
+          <h3>🎨 Color Match <span class="mg-badge">+20% Bonus</span></h3>
+          <div id="color-target">Match the trending color! <span id="color-target-swatch"></span></div>
+          <div id="color-swatches"></div>
+          <div id="color-timer-bar-wrap"><div id="color-timer-bar" style="width:100%"></div></div>
+          <div id="color-result"></div>
+        </div>
+
+        <!-- Negotiation Bar (inline preview) -->
+        <div class="minigame-card">
+          <h3>💼 Price Negotiation <span class="mg-badge">Full Price Sale</span></h3>
+          <p style="font-size:12px;color:#888;margin-bottom:8px;">After crafting an item, a negotiation challenge appears. Land the needle in the green zone!</p>
+          <div id="neg-bar-wrap" style="cursor:default;">
+            <div id="neg-sweet-spot"></div>
+            <div id="neg-needle" style="left:30%"></div>
+          </div>
+          <div style="text-align:center;font-size:12px;color:#888;margin-top:4px;">🟢 Sweet spot = Full price / Premium. Click DEAL! when crafting completes.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EFFORT↔REWARD TAB -->
+    <div id="tab-effort" class="tab-panel">
+      <div class="info-tip">⚡ <strong>EFFORT↔REWARD:</strong> More work = more money. Unlike the factory, <em>your effort directly controls your income!</em></div>
+      <br>
+      <div id="effort-panel">
+        <div class="stats-panel">
+          <h3>📊 Your Business Stats</h3>
+          <div class="stat-row"><span>Items Sold</span><span class="stat-value" id="stat-sold">0</span></div>
+          <div class="stat-row"><span>Total Earned</span><span class="stat-value" id="stat-earned">$0</span></div>
+          <div class="stat-row"><span>Color Bonuses</span><span class="stat-value" id="stat-color">0</span></div>
+          <div class="stat-row"><span>Sweet Deals</span><span class="stat-value" id="stat-deals">0</span></div>
+          <div class="stat-row"><span>Days Worked</span><span class="stat-value" id="stat-days">1</span></div>
+          <div class="stat-row"><span>Clicks Made</span><span class="stat-value" id="stat-clicks">0</span></div>
+        </div>
+
+        <div class="upgrade-cards">
+          <div class="upgrade-card">
+            <div>🔧</div>
+            <div class="upgrade-info">
+              <div class="upgrade-name">Faster Machine</div>
+              <div class="upgrade-desc">Reduces clicks needed by 40%</div>
+            </div>
+            <button class="upgrade-btn" id="upgrade-machine-btn" onclick="buyUpgrade('machine')">$100</button>
+          </div>
+          <div class="upgrade-card">
+            <div>📍</div>
+            <div class="upgrade-info">
+              <div class="upgrade-name">Better Location</div>
+              <div class="upgrade-desc">+30% to all sale prices</div>
+            </div>
+            <button class="upgrade-btn" id="upgrade-location-btn" onclick="buyUpgrade('location')">$250</button>
+          </div>
+          <div class="upgrade-card">
+            <div>🧑‍🤝‍🧑</div>
+            <div class="upgrade-info">
+              <div class="upgrade-name">Hire Assistant</div>
+              <div class="upgrade-desc">Auto-sews 1 item every 30 seconds</div>
+            </div>
+            <button class="upgrade-btn" id="upgrade-assistant-btn" onclick="buyUpgrade('assistant')">$500</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEW AREA (always visible in phase 2) -->
+    <div id="sew-area">
+      <div id="craft-status">Select a product and SEW!</div>
+      <button id="sew-btn-p2" onclick="sewClick()">SEW!</button>
+      <div id="craft-progress-wrap">
+        <div id="craft-progress" style="width:0%"></div>
+        <div id="craft-progress-text">0 / 5</div>
+      </div>
+    </div>
+
+  </div><!-- end phase2 -->
+</div><!-- end game-container -->
+
+<!-- Day/Night Overlay -->
+<div id="day-night-overlay"></div>
+
+<!-- Working Late Badge -->
+<div id="late-badge">🌙 Working Late! +$5</div>
+
+<!-- Negotiation Overlay -->
+<div id="neg-overlay">
+  <div id="neg-modal">
+    <h3>💼 Price Negotiation!</h3>
+    <p>A customer wants to buy your item.<br>Click DEAL! when the needle is in the green zone!</p>
+    <div id="neg-item-info"></div>
+    <div id="neg-bar-wrap" style="margin:0 0 10px">
+      <div id="neg-sweet-spot"></div>
+      <div id="neg-needle" style="left:30%"></div>
+    </div>
+    <button id="deal-btn" onclick="lockDeal()">DEAL!</button>
+    <div id="neg-result"></div>
+    <div id="neg-hint">🟢 Green zone = great deal!</div>
+  </div>
+</div>
+
+<!-- Win Screen -->
+<div id="win-screen">
+  <div class="win-emoji">🏆</div>
+  <h1>APRON EMPIRE BUILT!</h1>
+  <div class="win-sub" id="win-quote">"Your child enrolls in law school — just like Joe Flom's generation!"</div>
+
+  <div class="win-stats">
+    <h3>📊 Your Journey</h3>
+    <div class="win-stat-row"><span>Days Worked</span><span id="ws-days">—</span></div>
+    <div class="win-stat-row"><span>Items Sold</span><span id="ws-sold">—</span></div>
+    <div class="win-stat-row"><span>Upgrades Bought</span><span id="ws-upgrades">—</span></div>
+    <div class="win-stat-row"><span>Total Earned</span><span id="ws-earned">—</span></div>
+    <div class="win-stat-row"><span>Color Bonuses Won</span><span id="ws-color">—</span></div>
+    <div class="win-stat-row"><span>Sweet Deals Made</span><span id="ws-deals">—</span></div>
+  </div>
+
+  <div class="win-principle">
+    <h4>🎛️ AUTONOMY — You chose your products, hours & prices</h4>
+    <p>You were never told what to make. You picked aprons, dresses, and suits. You set your schedule and price point. That freedom is why the work felt meaningful — and why the Borgenichts built an empire from nothing.</p>
+  </div>
+  <div class="win-principle">
+    <h4>🧩 COMPLEXITY — Color matching & negotiation built your skill</h4>
+    <p>Your business required color intuition, market timing, and deal-making. These challenges kept the work engaging — unlike the sweatshop where every click was identical. Complexity creates mastery.</p>
+  </div>
+  <div class="win-principle">
+    <h4>⚡ EFFORT↔REWARD — Every sew click paid off</h4>
+    <p>You earned exactly what you worked for. More clicks, more items, more cash. The negotiation bar made every deal feel consequential. When effort visibly produces reward, work stops being labor and becomes purpose.</p>
+  </div>
+
+  <div class="win-law">
+    "Hard work is only a prison sentence when you lack autonomy, complexity, and a connection between effort and reward. When you have all three, <em>work is its own reward.</em>"<br>— Malcolm Gladwell, <strong>Outliers</strong>
+  </div>
+
+  <button id="play-again-btn" onclick="playAgain()">🔄 Play Again</button>
+</div>
+
+<script>
+// ========================================================
+//  AUDIO ENGINE
+// ========================================================
+const AC = (() => {
+  let ctx = null;
+  function get() {
+    if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+    return ctx;
+  }
+  function tone(freq, dur, type='sine', vol=0.3, delay=0) {
+    try {
+      const c = get();
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.connect(g); g.connect(c.destination);
+      o.type = type;
+      o.frequency.setValueAtTime(freq, c.currentTime + delay);
+      g.gain.setValueAtTime(vol, c.currentTime + delay);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + delay + dur);
+      o.start(c.currentTime + delay);
+      o.stop(c.currentTime + delay + dur);
+    } catch(e){}
+  }
+  return {
+    click() { tone(220, 0.05, 'square', 0.15); },
+    cash() { tone(440, 0.1, 'sine', 0.3); tone(880, 0.15, 'sine', 0.3, 0.1); },
+    warning() { tone(80, 0.4, 'sawtooth', 0.25); },
+    mgSuccess() { tone(523, 0.1); tone(659, 0.1, 'sine', 0.3, 0.1); tone(784, 0.2, 'sine', 0.3, 0.2); },
+    mgFail() { tone(300, 0.1, 'sawtooth', 0.2); tone(200, 0.2, 'sawtooth', 0.2, 0.1); },
+    victory() {
+      const notes = [523,659,784,1047,784,659,523,659,784,1047];
+      notes.forEach((n,i) => tone(n, 0.2, 'sine', 0.3, i*0.18));
+    }
+  };
+})();
+
+// ========================================================
+//  GAME STATE
+// ========================================================
+const gameState = {
+  // Phase 1
+  p1Clicks: 0,
+  p1Time: 20,
+  p1LastClickTime: Date.now(),
+  p1WarnShown: false,
+  p1Interval: null,
+
+  // Phase 2
+  cash: 0,
+  satisfaction: 50,
+  day: 1,
+  daySeconds: 0,  // 0-60
+  dayClicks: 0,
+  lateBonusGiven: false,
+  trendProduct: 'apron',
+  trendTimer: 0,
+
+  // Products
+  products: {
+    apron: { name: 'Apron', icon: '🧺', base: 8, clicks: 5 },
+    dress: { name: 'Dress', icon: '👗', base: 15, clicks: 10 },
+    suit: { name: 'Suit', icon: '🧥', base: 25, clicks: 15 },
+  },
+  selectedProduct: 'apron',
+
+  // Sliders
+  quality: 1,   // 0=low, 1=med, 2=high
+  hours: 1,     // 0=8, 1=12, 2=16
+  pricePoint: 1, // 0=50%, 1=100%, 2=150%
+
+  // Crafting
+  craftClicks: 0,
+  craftRequired: 5,
+  colorBonus: false,
+  negotiating: false,
+
+  // Upgrades
+  upgrades: { machine: false, location: false, assistant: false },
+  assistantTimer: 0,
+
+  // Stats
+  sold: 0,
+  totalEarned: 0,
+  colorBonusCount: 0,
+  sweetDeals: 0,
+  totalClicks: 0,
+
+  // Color minigame
+  colorSwatches: [],
+  targetColor: null,
+  colorTimer: 0,
+  colorCycleTimer: 0,
+  colorActive: true,
+
+  // Negotiation
+  negNeedlePos: 0.3,
+  negNeedleDir: 1,
+  negNeedleSpeed: 0.008,
+  negItemValue: 0,
+
+  // RAF
+  lastRaf: 0,
+  phase: 1,
+  gameOver: false,
+};
+
+const COLORS = [
+  { name: 'Crimson', hex: '#DC143C' },
+  { name: 'Navy', hex: '#1C3D7A' },
+  { name: 'Forest', hex: '#228B22' },
+  { name: 'Gold', hex: '#DAA520' },
+  { name: 'Plum', hex: '#7B2B7B' },
+  { name: 'Teal', hex: '#008080' },
+  { name: 'Amber', hex: '#FFBF00' },
+  { name: 'Slate', hex: '#4682B4' },
+];
+
+const TRENDS = [
+  { product: 'apron', label: 'Aprons HOT 🔥' },
+  { product: 'dress', label: 'Dresses Trending 📈' },
+  { product: 'suit', label: 'Suits in Demand 🎩' },
+  { product: 'apron', label: 'Factory Aprons Needed 🏭' },
+  { product: 'dress', label: 'Summer Dresses! ☀️' },
+  { product: 'suit', label: 'Weddings This Week 💍' },
+];
+
+const TIME_OF_DAY = ['Morning ☀️','Afternoon 🌤️','Evening 🌆','Night 🌙'];
+const DAY_TINTS = ['rgba(0,0,0,0)','rgba(0,0,50,0.08)','rgba(50,20,0,0.15)','rgba(0,0,40,0.3)'];
+
+// ========================================================
+//  PHASE 1
+// ========================================================
+function startPhase1() {
+  gameState.p1Time = 20;
+  gameState.p1Clicks = 0;
+  gameState.p1LastClickTime = Date.now();
+
+  // Timer
+  gameState.p1Interval = setInterval(() => {
+    gameState.p1Time--;
+    const pct = (gameState.p1Time / 20) * 100;
+    document.getElementById('phase1-progress').style.width = pct + '%';
+    document.getElementById('phase1-timer-text').textContent = gameState.p1Time + 's remaining';
+
+    // Check lazy
+    const now = Date.now();
+    if (now - gameState.p1LastClickTime > 3000) {
+      showP1Warning();
+    }
+
+    if (gameState.p1Time <= 0) {
+      clearInterval(gameState.p1Interval);
+      endPhase1();
+    }
+  }, 1000);
+}
+
+function p1Click() {
+  if (gameState.p1Time <= 0) return;
+  AC.click();
+  gameState.p1Clicks++;
+  gameState.p1LastClickTime = Date.now();
+  document.getElementById('phase1-clicks').textContent = 'Clicks: ' + gameState.p1Clicks;
+
+  // Little button animation
+  const btn = document.getElementById('sew-btn-p1');
+  btn.style.transform = 'scale(0.88)';
+  setTimeout(() => btn.style.transform = '', 80);
+
+  // Hide warning
+  const wp = document.getElementById('warning-popup');
+  if (wp.classList.contains('show')) {
+    setTimeout(() => wp.classList.remove('show'), 500);
+  }
+}
+
+let warnTimeout = null;
+function showP1Warning() {
+  const wp = document.getElementById('warning-popup');
+  const speech = document.getElementById('supervisor-speech');
+  const msgs = ['WORK FASTER!', 'NO SLACKING!', 'PICK UP THE PACE!', 'ARE YOU SLEEPING?!'];
+  wp.innerHTML = '⚠️ ' + msgs[Math.floor(Math.random()*msgs.length)] + ' ⚠️<br><small>The boss is watching!</small>';
+  wp.classList.add('show');
+  speech.textContent = msgs[Math.floor(Math.random()*msgs.length)] + ' 😤';
+  speech.classList.add('show');
+  AC.warning();
+  clearTimeout(warnTimeout);
+  warnTimeout = setTimeout(() => {
+    wp.classList.remove('show');
+    speech.classList.remove('show');
+  }, 1800);
+}
+
+function endPhase1() {
+  document.getElementById('transition-banner').classList.add('show');
+  // Shake
+  document.getElementById('game-container').classList.add('shake');
+  setTimeout(() => document.getElementById('game-container').classList.remove('shake'), 600);
+}
+
+// ========================================================
+//  PHASE 2 INIT
+// ========================================================
+function startPhase2() {
+  document.getElementById('transition-banner').classList.remove('show');
+  document.getElementById('phase1').style.display = 'none';
+  document.getElementById('phase2').style.display = 'flex';
+  document.getElementById('phase2').style.flexDirection = 'column';
+  gameState.phase = 2;
+
+  initColorGame();
+  pickNewTrend();
+  updateHUD();
+  updateSliders();
+  requestAnimationFrame(gameLoop);
+}
+
+// ========================================================
+//  GAME LOOP
+// ========================================================
+function gameLoop(ts) {
+  if (gameState.gameOver) return;
+
+  const dt = Math.min((ts - (gameState.lastRaf || ts)) / 1000, 0.1);
+  gameState.lastRaf = ts;
+
+  // Day cycle
+  gameState.daySeconds += dt;
+  if (gameState.daySeconds >= 60) {
+    gameState.daySeconds -= 60;
+    gameState.day++;
+    gameState.dayClicks = 0;
+    gameState.lateBonusGiven = false;
+    updateHUD();
+  }
+
+  // Trend timer
+  gameState.trendTimer += dt;
+  if (gameState.trendTimer >= 30) {
+    gameState.trendTimer = 0;
+    pickNewTrend();
+  }
+
+  // Color game timer
+  if (gameState.colorActive && gameState.colorTimer > 0) {
+    gameState.colorTimer -= dt;
+    const pct = Math.max(0, gameState.colorTimer / 2) * 100;
+    const bar = document.getElementById('color-timer-bar');
+    if (bar) bar.style.width = pct + '%';
+    if (gameState.colorTimer <= 0) {
+      colorFail();
+    }
+  }
+
+  // Color cycle
+  gameState.colorCycleTimer += dt;
+  if (gameState.colorCycleTimer >= 10) {
+    gameState.colorCycleTimer = 0;
+    if (gameState.colorActive) setupColorRound();
+  }
+
+  // Negotiation needle
+  if (gameState.negotiating) {
+    gameState.negNeedlePos += gameState.negNeedleDir * gameState.negNeedleSpeed * 60 * dt;
+    if (gameState.negNeedlePos >= 1) { gameState.negNeedlePos = 1; gameState.negNeedleDir = -1; }
+    if (gameState.negNeedlePos <= 0) { gameState.negNeedlePos = 0; gameState.negNeedleDir = 1; }
+    const needle = document.querySelector('#neg-overlay #neg-needle');
+    if (needle) needle.style.left = (gameState.negNeedlePos * 100) + '%';
+    // Also update inline preview
+    const previewNeedle = document.querySelector('#tab-complexity #neg-needle');
+    if (previewNeedle) previewNeedle.style.left = (gameState.negNeedlePos * 100) + '%';
+  }
+
+  // Assistant auto-sew
+  if (gameState.upgrades.assistant) {
+    gameState.assistantTimer += dt;
+    if (gameState.assistantTimer >= 30) {
+      gameState.assistantTimer = 0;
+      autoSewItem();
+    }
+  }
+
+  updateHUD();
+  updateStats();
+  updateUpgradeButtons();
+
+  requestAnimationFrame(gameLoop);
+}
+
+// ========================================================
+//  TREND
+// ========================================================
+function pickNewTrend() {
+  const t = TRENDS[Math.floor(Math.random() * TRENDS.length)];
+  gameState.trendProduct = t.product;
+  const el = document.getElementById('trend-display');
+  if (el) {
+    el.textContent = t.label;
+    el.classList.add('bonus-flash');
+    setTimeout(() => el.classList.remove('bonus-flash'), 600);
+  }
+  updateMarketTip();
+}
+
+// ========================================================
+//  HUD
+// ========================================================
+function updateHUD() {
+  document.getElementById('cash-display').textContent = '$' + Math.floor(gameState.cash);
+  document.getElementById('sat-bar').style.width = gameState.satisfaction + '%';
+  document.getElementById('sat-value').textContent = Math.round(gameState.satisfaction);
+  document.getElementById('day-display').textContent = gameState.day;
+
+  const timeIdx = Math.floor((gameState.daySeconds / 60) * 4);
+  document.getElementById('time-display').textContent = TIME_OF_DAY[Math.min(timeIdx,3)];
+
+  // Win bar
+  const pct = Math.min(100, (gameState.cash / 1000) * 100);
+  document.getElementById('win-bar').style.width = pct + '%';
+  document.getElementById('win-bar-label').textContent = Math.floor(pct) + '%';
+
+  // Day/night overlay
+  const overlay = document.getElementById('day-night-overlay');
+  if (overlay) overlay.style.background = DAY_TINTS[Math.min(timeIdx,3)];
+
+  // Check win
+  if (gameState.cash >= 1000 && !gameState.gameOver) {
+    triggerWin();
+  }
+}
+
+function updateStats() {
+  document.getElementById('stat-sold').textContent = gameState.sold;
+  document.getElementById('stat-earned').textContent = '$' + Math.floor(gameState.totalEarned);
+  document.getElementById('stat-color').textContent = gameState.colorBonusCount;
+  document.getElementById('stat-deals').textContent = gameState.sweetDeals;
+  document.getElementById('stat-days').textContent = gameState.day;
+  document.getElementById('stat-clicks').textContent = gameState.totalClicks;
+}
+
+// ========================================================
+//  AUTONOMY SLIDERS
+// ========================================================
+function updateSliders() {
+  const q = parseInt(document.getElementById('quality-slider').value);
+  const h = parseInt(document.getElementById('hours-slider').value);
+  const p = parseInt(document.getElementById('price-slider').value);
+  gameState.quality = q;
+  gameState.hours = h;
+  gameState.pricePoint = p;
+
+  document.getElementById('quality-label').textContent = ['Low','Medium','High'][q];
+  document.getElementById('hours-label').textContent = ['8 hrs','12 hrs','16 hrs'][h];
+  document.getElementById('price-label').textContent = ['50% (Cheap)','100% (Fair)','150% (Premium)'][p];
+
+  updateMarketTip();
+}
+
+function updateMarketTip() {
+  const q = gameState.quality, p = gameState.pricePoint;
+  const tips = [];
+  if (q === 2 && p === 0) tips.push('🔥 High quality + low price = customers rush in!');
+  else if (q === 0 && p === 2) tips.push('⚠️ Low quality + premium price = poor reviews...');
+  else if (q === 2 && p === 2) tips.push('💎 Premium goods at premium price — luxury buyers love it!');
+  else if (q === 1 && p === 1) tips.push('✅ Fair quality + fair price = steady, reliable sales.');
+  else tips.push('💡 Adjust quality and price to match market expectations!');
+
+  if (gameState.selectedProduct === gameState.trendProduct) {
+    tips.push('📈 You are crafting the trending item — +50% bonus!');
+  }
+  const el = document.getElementById('market-tip');
+  if (el) el.innerHTML = tips.join('<br>');
+}
+
+function selectProduct(prod) {
+  gameState.selectedProduct = prod;
+  document.querySelectorAll('.product-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('card-' + prod).classList.add('selected');
+
+  // Reset craft progress
+  gameState.craftClicks = 0;
+  updateCraftProgress();
+  updateMarketTip();
+  AC.click();
+}
+
+// ========================================================
+//  CRAFTING
+// ========================================================
+function getCraftRequired() {
+  let base = gameState.products[gameState.selectedProduct].clicks;
+  if (gameState.upgrades.machine) base = Math.ceil(base * 0.6);
+  return Math.max(1, base);
+}
+
+function getSalePrice() {
+  const prod = gameState.products[gameState.selectedProduct];
+  let price = prod.base;
+
+  // Quality modifier
+  const qMods = [1.0, 1.2, 1.5];
+  price *= qMods[gameState.quality];
+
+  // Price point
+  const pMods = [0.5, 1.0, 1.5];
+  price *= pMods[gameState.pricePoint];
+
+  // Location upgrade
+  if (gameState.upgrades.location) price *= 1.3;
+
+  // Trend bonus
+  if (gameState.selectedProduct === gameState.trendProduct) price *= 1.5;
+
+  // Color bonus
+  if (gameState.colorBonus) { price *= 1.2; gameState.colorBonus = false; }
+
+  // Hours affect "demand" — more hours, slightly higher prices
+  const hMods = [0.9, 1.0, 1.1];
+  price *= hMods[gameState.hours];
+
+  return Math.round(price);
+}
+
+function sewClick() {
+  if (gameState.negotiating) return;
+  AC.click();
+  gameState.craftClicks++;
+  gameState.totalClicks++;
+  gameState.dayClicks++;
+
+  // Working late bonus
+  if (gameState.dayClicks >= 12 && !gameState.lateBonusGiven) {
+    gameState.lateBonusGiven = true;
+    gameState.cash += 5;
+    const badge = document.getElementById('late-badge');
+    badge.classList.add('show');
+    spawnFloatingText('+$5', getRandomX(), getRandomY());
+    setTimeout(() => badge.classList.remove('show'), 3000);
+    AC.cash();
+  }
+
+  const req = getCraftRequired();
+  gameState.craftRequired = req;
+
+  if (gameState.craftClicks >= req) {
+    // Item complete!
+    completeItem();
+  } else {
+    updateCraftProgress();
+  }
+
+  // Satisfaction
+  gameState.satisfaction = Math.min(100, gameState.satisfaction + 0.5);
+
+  // Screen micro-feedback
+  const btn = document.getElementById('sew-btn-p2');
+  btn.style.transform = 'scale(0.9)';
+  setTimeout(() => btn.style.transform = '', 80);
+}
+
+function updateCraftProgress() {
+  const req = getCraftRequired();
+  const pct = Math.min(100, (gameState.craftClicks / req) * 100);
+  document.getElementById('craft-progress').style.width = pct + '%';
+  document.getElementById('craft-progress-text').textContent = gameState.craftClicks + ' / ' + req;
+  const prod = gameState.products[gameState.selectedProduct];
+  document.getElementById('craft-status').textContent =
+    prod.icon + ' Crafting ' + prod.name + '… ' + (req - gameState.craftClicks) + ' clicks left';
+}
+
+function completeItem() {
+  // Trigger negotiation mini-game
+  gameState.craftClicks = 0;
+  gameState.craftRequired = getCraftRequired();
+  updateCraftProgress();
+
+  const price = getSalePrice();
+  gameState.negItemValue = price;
+  startNegotiation(price);
+}
+
+function autoSewItem() {
+  // Assistant completes a low-value item automatically
+  const prod = gameState.products[gameState.selectedProduct];
+  let price = prod.base * 0.8;
+  if (gameState.upgrades.location) price *= 1.3;
+  price = Math.round(price);
+  gameState.cash += price;
+  gameState.sold++;
+  gameState.totalEarned += price;
+  spawnFloatingText('+$' + price, getRandomX(), getRandomY());
+  AC.cash();
+  updateHUD();
+}
+
+// ========================================================
+//  NEGOTIATION MINI-GAME
+// ========================================================
+function startNegotiation(price) {
+  gameState.negotiating = true;
+  gameState.negNeedlePos = 0.1;
+  gameState.negNeedleDir = 1;
+  gameState.negNeedleSpeed = 0.006 + Math.random() * 0.006;
+
+  document.getElementById('neg-item-info').textContent =
+    gameState.products[gameState.selectedProduct].icon +
+    ' ' + gameState.products[gameState.selectedProduct].name +
+    ' — Max Value: $' + price;
+  document.getElementById('neg-result').textContent = '';
+  document.getElementById('neg-overlay').classList.add('show');
+}
+
+function lockDeal() {
+  if (!gameState.negotiating) return;
+  AC.click();
+
+  // Sweet spot: 60%-80%
+  const pos = gameState.negNeedlePos;
+  const inSweet = (pos >= 0.60 && pos <= 0.80);
+  const nearSweet = (pos >= 0.45 && pos < 0.60);
+
+  let multiplier = 0;
+  let resultText = '';
+  let earned = 0;
+
+  if (inSweet) {
+    multiplier = 1.0 + (Math.random() * 0.2); // 100-120%
+    earned = Math.round(gameState.negItemValue * multiplier);
+    resultText = '🎉 SWEET DEAL! Full price + ' + Math.round((multiplier-1)*100) + '% bonus!';
+    gameState.sweetDeals++;
+    AC.mgSuccess();
+    spawnParticles();
+  } else if (nearSweet) {
+    multiplier = 0.75 + Math.random() * 0.2;
+    earned = Math.round(gameState.negItemValue * multiplier);
+    resultText = '😐 Customer haggled. Got ' + Math.round(multiplier*100) + '%.';
+    AC.mgFail();
+  } else if (pos > 0.80) {
+    // Customer thinks it's too expensive
+    multiplier = 0.6 + Math.random() * 0.15;
+    earned = Math.round(gameState.negItemValue * multiplier);
+    resultText = '😬 Overshot! They walked away partially. Got ' + Math.round(multiplier*100) + '%.';
+    AC.mgFail();
+  } else {
+    multiplier = 0.5 + Math.random() * 0.15;
+    earned = Math.round(gameState.negItemValue * multiplier);
+    resultText = '😞 Bad deal. Price too low. Got ' + Math.round(multiplier*100) + '%.';
+    AC.mgFail();
+  }
+
+  document.getElementById('neg-result').textContent = resultText;
+  document.getElementById('neg-result').style.color = inSweet ? '#008800' : '#AA4400';
+
+  setTimeout(() => {
+    gameState.negotiating = false;
+    document.getElementById('neg-overlay').classList.remove('show');
+
+    // Add cash
+    gameState.cash += earned;
+    gameState.sold++;
+    gameState.totalEarned += earned;
+    gameState.satisfaction = Math.min(100, gameState.satisfaction + 2);
+
+    // Floating text
+    spawnFloatingText('+$' + earned, getRandomX(), getRandomY());
+    AC.cash();
+
+    // Shake on big sales
+    if (earned >= 20) {
+      document.getElementById('game-container').classList.add('shake');
+      setTimeout(() => document.getElementById('game-container').classList.remove('shake'), 500);
+    }
+
+    if (inSweet) spawnParticles();
+    updateHUD();
+    updateStats();
+
+    const prod = gameState.products[gameState.selectedProduct];
+    document.getElementById('craft-status').textContent = 'Select a product and SEW! ✂️';
+  }, 1500);
+}
+
+// ========================================================
+//  COLOR MINI-GAME
+// ========================================================
+function initColorGame() {
+  setupColorRound();
+}
+
+function setupColorRound() {
+  // Pick 4 random colors
+  const shuffled = [...COLORS].sort(() => Math.random() - 0.5).slice(0, 4);
+  gameState.colorSwatches = shuffled;
+
+  // Pick target as one of the 4
+  gameState.targetColor = shuffled[Math.floor(Math.random() * shuffled.length)];
+  gameState.colorTimer = 2.0;
+  gameState.colorActive = true;
+
+  renderColorGame();
+}
+
+function renderColorGame() {
+  const swatchContainer = document.getElementById('color-swatches');
+  if (!swatchContainer) return;
+  swatchContainer.innerHTML = '';
+  gameState.colorSwatches.forEach(c => {
+    const div = document.createElement('div');
+    div.className = 'color-swatch';
+    div.style.background = c.hex;
+    div.addEventListener('click', () => colorClick(c));
+    div.addEventListener('touchend', (e) => { e.preventDefault(); colorClick(c); });
+    swatchContainer.appendChild(div);
+  });
+
+  const targetSwatch = document.getElementById('color-target-swatch');
+  if (targetSwatch) targetSwatch.style.background = gameState.targetColor.hex;
+  const targetEl = document.getElementById('color-target');
+  if (targetEl) targetEl.innerHTML = 'Match this color! <span id="color-target-swatch" style="display:inline-block;width:30px;height:30px;border-radius:50%;border:3px solid #333;vertical-align:middle;background:' + gameState.targetColor.hex + ';animation:targetPulse 0.8s ease-in-out infinite"></span>';
+
+  const result = document.getElementById('color-result');
+  if (result) result.textContent = '';
+}
+
+function colorClick(color) {
+  if (!gameState.colorActive) return;
+  if (color.hex === gameState.targetColor.hex) {
+    // Correct!
+    gameState.colorBonus = true;
+    gameState.colorBonusCount++;
+    gameState.colorActive = false;
+    AC.mgSuccess();
+    const result = document.getElementById('color-result');
+    if (result) { result.textContent = '✅ +20% bonus on next sale!'; result.style.color = '#008800'; }
+    setTimeout(setupColorRound, 2000);
+  } else {
+    AC.mgFail();
+    const result = document.getElementById('color-result');
+    if (result) { result.textContent = '❌ Wrong color! Try again!'; result.style.color = '#AA0000'; }
+    // Flash wrong
+    const swatches = document.querySelectorAll('.color-swatch');
+    swatches.forEach(s => {
+      if (s.style.background === hexToRgb(color.hex) || rgbMatch(s.style.background, color.hex)) {
+        s.classList.add('wrong');
+        setTimeout(() => s.classList.remove('wrong'), 400);
+      }
+    });
+  }
+}
+
+function colorFail() {
+  gameState.colorActive = false;
+  AC.mgFail();
+  const result = document.getElementById('color-result');
+  if (result) { result.textContent = '⏰ Too slow! No bonus.'; result.style.color = '#AA4400'; }
+  setTimeout(setupColorRound, 1500);
+}
+
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `rgb(${r}, ${g}, ${b})`;
+}
+function rgbMatch(rgb, hex) {
+  return rgb === hexToRgb(hex);
+}
+
+// ========================================================
+//  UPGRADES
+// ========================================================
+function buyUpgrade(type) {
+  const costs = { machine: 100, location: 250, assistant: 500 };
+  const cost = costs[type];
+  if (gameState.cash < cost || gameState.upgrades[type]) return;
+
+  gameState.cash -= cost;
+  gameState.upgrades[type] = true;
+  AC.cash();
+  spawnFloatingText('UPGRADE!', getRandomX(), getRandomY());
+  updateHUD();
+  updateUpgradeButtons();
+
+  if (type === 'assistant') {
+    gameState.assistantTimer = 0;
+  }
+
+  // Satisfaction boost
+  gameState.satisfaction = Math.min(100, gameState.satisfaction + 10);
+}
+
+function updateUpgradeButtons() {
+  const types = ['machine', 'location', 'assistant'];
+  const costs = { machine: 100, location: 250, assistant: 500 };
+  types.forEach(t => {
+    const btn = document.getElementById('upgrade-' + t + '-btn');
+    if (!btn) return;
+    if (gameState.upgrades[t]) {
+      btn.textContent = '✅ Owned';
+      btn.classList.add('owned');
+      btn.disabled = true;
+    } else {
+      btn.disabled = gameState.cash < costs[t];
+    }
+  });
+}
+
+// ========================================================
+//  EFFECTS
+// ========================================================
+function spawnFloatingText(text, x, y) {
+  const el = document.createElement('div');
+  el.className = 'float-text';
+  el.textContent = text;
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1300);
+}
+
+function spawnParticles() {
+  const colors = ['#FFD700','#FF6B6B','#6BCB77','#4D96FF','#FF9A3C','#C77DFF'];
+  const cx = window.innerWidth / 2;
+  const cy = window.innerHeight / 2;
+
+  for (let i = 0; i < 24; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = 6 + Math.random() * 10;
+    p.style.width = size + 'px';
+    p.style.height = size + 'px';
+    p.style.background = colors[Math.floor(Math.random()*colors.length)];
+    p.style.left = cx + 'px';
+    p.style.top = cy + 'px';
+    document.body.appendChild(p);
+
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 60 + Math.random() * 200;
+    const tx = Math.cos(angle) * dist;
+    const ty = Math.sin(angle) * dist;
+    const dur = 600 + Math.random() * 600;
+
+    p.animate([
+      { transform: 'translate(0,0) scale(1)', opacity: 1 },
+      { transform: `translate(${tx}px,${ty}px) scale(0)`, opacity: 0 }
+    ], { duration: dur, easing: 'cubic-bezier(0,.9,.57,1)', fill: 'forwards' });
+
+    setTimeout(() => p.remove(), dur + 50);
+  }
+}
+
+function getRandomX() { return 200 + Math.random() * 400; }
+function getRandomY() { return 100 + Math.random() * 300; }
+
+// ========================================================
+//  TAB SWITCHING
+// ========================================================
+function switchTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  const tabs = document.querySelectorAll('.tab-btn');
+  const idx = ['autonomy','complexity','effort'].indexOf(name);
+  if (tabs[idx]) tabs[idx].classList.add('active');
+  AC.click();
+}
+
+// ========================================================
+//  WIN SCREEN
+// ========================================================
+function triggerWin() {
+  gameState.gameOver = true;
+  AC.victory();
+  spawnParticles();
+  setTimeout(spawnParticles, 300);
+  setTimeout(spawnParticles, 600);
+
+  // Fill win screen stats
+  document.getElementById('ws-days').textContent = gameState.day;
+  document.getElementById('ws-sold').textContent = gameState.sold;
+  const upgCount = Object.values(gameState.upgrades).filter(Boolean).length;
+  document.getElementById('ws-upgrades').textContent = upgCount;
+  document.getElementById('ws-earned').textContent = '$' + Math.floor(gameState.totalEarned);
+  document.getElementById('ws-color').textContent = gameState.colorBonusCount;
+  document.getElementById('ws-deals').textContent = gameState.sweetDeals;
+
+  document.getElementById('win-screen').classList.add('show');
+}
+
+function playAgain() {
+  location.reload();
+}
+
+// ========================================================
+//  PHASE 2 SHOW
+// ========================================================
+function startPhase2() {
+  document.getElementById('transition-banner').classList.remove('show');
+  document.getElementById('phase1').style.display = 'none';
+  const p2 = document.getElementById('phase2');
+  p2.style.display = 'flex';
+  p2.style.flexDirection = 'column';
+  gameState.phase = 2;
+
+  initColorGame();
+  pickNewTrend();
+  updateHUD();
+  updateSliders();
+  gameState.lastRaf = performance.now();
+  requestAnimationFrame(gameLoop);
+}
+
+// ========================================================
+//  BOOT
+// ========================================================
+window.addEventListener('load', () => {
+  startPhase1();
+
+  // Touch support for phase1 sew button
+  document.getElementById('sew-btn-p1').addEventListener('touchend', (e) => {
+    e.preventDefault();
+    p1Click();
+  });
+  document.getElementById('sew-btn-p2').addEventListener('touchend', (e) => {
+    e.preventDefault();
+    sewClick();
+  });
+  document.getElementById('deal-btn').addEventListener('touchend', (e) => {
+    e.preventDefault();
+    lockDeal();
+  });
+});
+</script>
+</body>
+</html>
